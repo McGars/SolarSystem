@@ -2,7 +2,7 @@ package com.mcgars.solarsystem.feature.main.di
 
 import androidx.lifecycle.ViewModel
 import com.mcgars.solarsystem.di.viewmodel.ViewModelKey
-import com.mcgars.solarsystem.feature.main.domain.MainViewModel
+import com.mcgars.solarsystem.feature.main.presentation.model.MainViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap

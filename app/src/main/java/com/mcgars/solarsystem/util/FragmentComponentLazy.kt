@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
  *  }
  */
 @MainThread
-inline fun <reified Component : Any> Fragment.component(params: Any? = null): Lazy<Component> =
+inline fun <reified Component : Any> Fragment.component(noinline params: (() -> Any)? = null): Lazy<Component> =
     createComponentLazy(Component::class, params)
 
 /**
@@ -20,5 +20,5 @@ inline fun <reified Component : Any> Fragment.component(params: Any? = null): La
 @MainThread
 fun <Component : Any> Fragment.createComponentLazy(
     component: KClass<Component>,
-    params: Any?
+    params: (() -> Any)? = null
 ): Lazy<Component> = ComponentProvider(component, params, this)

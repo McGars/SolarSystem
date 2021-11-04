@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.viewinterop.AndroidViewBinding
 import com.github.terrakok.cicerone.NavigatorHolder
 import com.github.terrakok.cicerone.androidx.AppNavigator
-import com.mcgars.solarsystem.components.AppScaffold
+import com.mcgars.solarsystem.components.AppScaffoldFragment
 import com.mcgars.solarsystem.databinding.ContentMainBinding
 import com.mcgars.solarsystem.di.AppComponent
 import com.mcgars.solarsystem.di.store.ComponentStore
@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppScaffold {
+            AppScaffoldFragment {
                 AndroidViewBinding(ContentMainBinding::inflate)
             }
         }

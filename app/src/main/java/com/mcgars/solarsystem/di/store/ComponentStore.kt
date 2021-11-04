@@ -5,14 +5,15 @@ import kotlin.reflect.KClass
 
 class ComponentHolder<Component : Any>(
     internal val parentComponent: Any?,
+    internal val params: Any?,
     private val component: Component,
-    internal val params: Any?
+    private val componentKey: KClass<Component>,
 ) {
 
     fun get(): Component = component
 
     fun clear() {
-        ComponentStore.clear(component::class, params)
+        ComponentStore.clear(componentKey, params)
     }
 }
 
@@ -84,9 +85,12 @@ object ComponentStore {
         params: Any? = null
     ): ComponentHolder<Component> {
         val key = component.hashCode()
-        val componentBucket = cache[key] ?: createCacheBucked(key, params)
-        val componentHolder = componentBucket[params.hashCode()]
-            ?: throw NullPointerException("something wrong, the $component doesn't exists")
+        val componentBucket = cache[key] ?: createCacheBucked(component, params)
+        val componentHolder = componentBucket[params.hashCode()] ?: createComponentHolder(
+            componentKey = component,
+            params = params,
+            componentProvider = component.provider()
+        )
         return componentHolder as ComponentHolder<Component>
     }
 
@@ -119,21 +123,23 @@ object ComponentStore {
     /*
     *
     * */
-    private fun createCacheBucked(
-        key: Int,
+    private fun <Component : Any> createCacheBucked(
+        component: KClass<Component>,
         params: Any?
     ): MutableMap<Int, ComponentHolder<*>> {
-        val componentProvider =
-            providers[key] ?: throw NullPointerException("the provider must be registered")
-        return mutableMapOf(
-            params.hashCode() to createComponentHolder(params, componentProvider)
-        ).also { cache[key] = it }
+        val key = component.hashCode()
+        val componentHolder = createComponentHolder(component, params, component.provider())
+        val paramKey = params.hashCode()
+        return mutableMapOf(paramKey to componentHolder).also {
+            cache[key] = it
+        }
     }
 
     /*
     *
     * */
-    private fun createComponentHolder(
+    private fun <Component : Any> createComponentHolder(
+        componentKey: KClass<Component>,
         params: Any?,
         componentProvider: ComponentProvider<Any?, Any, Any?>
     ): ComponentHolder<*> {
@@ -142,9 +148,13 @@ object ComponentStore {
         }
         return ComponentHolder(
             parentComponent = parentComponent,
+            params = params,
             component = componentProvider.provideComponent(parentComponent, params),
-            params = params
+            componentKey = componentKey as KClass<Any>,
         )
     }
+
+    private fun <Component : Any> KClass<Component>.provider(): ComponentProvider<Any?, Any, Any?> =
+        providers[hashCode()] ?: throw NullPointerException("the provider must be registered")
 
 }

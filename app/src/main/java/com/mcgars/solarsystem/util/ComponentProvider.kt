@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 
 class ComponentProvider<Component : Any>(
     private val component: KClass<Component>,
-    private val params: Any? = null,
+    private val params: (() -> Any)? = null,
     private val owner: LifecycleOwner,
 ) : Lazy<Component>, DefaultLifecycleObserver {
 
@@ -17,7 +17,7 @@ class ComponentProvider<Component : Any>(
 
     override val value: Component
         get() {
-            return cached?.get() ?: ComponentStore.getComponent(component, params).also {
+            return cached?.get() ?: ComponentStore.getComponent(component, params?.invoke()).also {
                 cached = it
                 owner.lifecycle.addObserver(this)
             }.get()

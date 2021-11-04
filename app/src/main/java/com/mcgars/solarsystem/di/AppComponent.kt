@@ -32,6 +32,7 @@ interface AppComponent : AppComponentApi {
 abstract class AppModule {
 
     @Binds
+    @Singleton
     abstract fun bindViewModelFactory(impl: ViewModelFactory): ViewModelProvider.Factory
 
 }
