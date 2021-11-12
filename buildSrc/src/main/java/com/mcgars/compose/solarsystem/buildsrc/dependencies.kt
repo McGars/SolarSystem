@@ -82,7 +82,9 @@ object Libs {
 
         object Navigation {
             private const val version = "7.1"
+            private const val versionCompose = "2.4.0-beta02"
             const val cicerone = "com.github.terrakok:cicerone:$version"
+            const val navigationCompose = "androidx.navigation:navigation-compose:$versionCompose"
         }
 
         object Test {

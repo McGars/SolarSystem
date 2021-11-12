@@ -1,4 +1,4 @@
-package com.mcgars.solarsystem.components
+package com.mcgars.solarsystem.compose
 
 import android.view.View
 import android.view.ViewGroup

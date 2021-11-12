@@ -1,14 +1,13 @@
-package com.mcgars.solarsystem.components
+package com.mcgars.solarsystem.compose
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleOwner
 import com.mcgars.solarsystem.di.store.ComponentHolder
 import com.mcgars.solarsystem.ui.theme.SolarSystemTheme
-import kotlinx.coroutines.DisposableHandle
 
 @Composable
 fun AppFragment(
@@ -32,15 +31,15 @@ fun AppScaffoldFragment(
 
 @Composable
 fun AppScaffold(
-    viewModel: ViewModel,
     componentHolder: ComponentHolder<*>,
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     content: @Composable (PaddingValues) -> Unit
 ) {
     SolarSystemTheme {
         Scaffold(
             content = content
         )
-        DisposableEffect(key1 = viewModel) {
+        DisposableEffect(lifecycleOwner) {
             onDispose { componentHolder.clear() }
         }
     }

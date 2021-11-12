@@ -1,4 +1,4 @@
-package com.mcgars.solarsystem.feature.detail.compose
+package com.mcgars.solarsystem.feature.detail.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,25 +20,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mcgars.solarsystem.components.AppScaffold
+import com.mcgars.solarsystem.compose.AppScaffold
 import com.mcgars.solarsystem.data.model.Planet
 import com.mcgars.solarsystem.di.store.ComponentHolder
 import com.mcgars.solarsystem.di.store.ComponentStore
 import com.mcgars.solarsystem.feature.detail.di.DetailComponent
-import com.mcgars.solarsystem.feature.detail.model.DetailViewModel
+import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewModel
+import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewState
 import com.mcgars.solarsystem.feature.main.presentation.compose.PlanetIcon
-import com.mcgars.solarsystem.feature.main.presentation.compose.ProfilePicture
 import com.mcgars.solarsystem.feature.main.presentation.compose.StarsBackground
 
 
 @Composable
-fun DetailPageCompose(
-    planet: Planet,
-    componentHolder: ComponentHolder<DetailComponent> = ComponentStore.getComponent(planet),
+fun DetailScreen(
+    planetPosition: Int,
+    componentHolder: ComponentHolder<DetailComponent> = ComponentStore.getComponent(planetPosition),
     detailComponent: DetailComponent = componentHolder.get(),
     detailViewModel: DetailViewModel = viewModel(factory = detailComponent.viewModelFactory())
 ) {
-    AppScaffold(detailViewModel, componentHolder) {
+    AppScaffold(componentHolder) {
         DetailContent(detailViewModel)
     }
 }
@@ -47,7 +47,25 @@ fun DetailPageCompose(
 fun DetailContent(
     detailViewModel: DetailViewModel
 ) {
-    val planet: Planet by detailViewModel.state.collectAsState()
+    val state: DetailViewState by detailViewModel.state.collectAsState()
+
+    when (state) {
+        is DetailViewState.Loading -> Loading()
+        is DetailViewState.Data -> Detail((state as DetailViewState.Data).planet)
+    }
+}
+
+@Composable
+fun Loading() {
+    Box {
+        Text(modifier = Modifier.align(Alignment.Center), text = "loading")
+    }
+}
+
+@Composable
+fun Detail(
+    planet: Planet
+) {
     val scrollState = rememberScrollState()
     Box {
         StarsBackground(Modifier
@@ -56,9 +74,11 @@ fun DetailContent(
             .height(240.dp)
             .fillMaxSize()
         )
-        PlanetIcon(planet, Modifier
-            .padding(top = 20.dp)
-            .align(alignment = Alignment.TopCenter)
+        PlanetIcon(
+            planet, Modifier
+                .padding(top = 20.dp)
+                .graphicsLayer { translationY = (-scrollState.value * 0.50f) }
+                .align(alignment = Alignment.TopCenter)
         )
         Column(
             Modifier

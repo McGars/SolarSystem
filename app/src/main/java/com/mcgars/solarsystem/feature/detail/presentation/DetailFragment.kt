@@ -4,18 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.ui.Modifier
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.mcgars.solarsystem.components.AppScaffoldFragment
-import com.mcgars.solarsystem.components.composeView
+import com.mcgars.solarsystem.compose.AppScaffoldFragment
+import com.mcgars.solarsystem.compose.composeView
 import com.mcgars.solarsystem.data.model.Planet
-import com.mcgars.solarsystem.feature.detail.compose.DetailContent
+import com.mcgars.solarsystem.feature.detail.presentation.compose.DetailContent
 import com.mcgars.solarsystem.feature.detail.di.DetailComponent
-import com.mcgars.solarsystem.feature.detail.model.DetailViewModel
-import com.mcgars.solarsystem.feature.main.presentation.compose.StarsBackground
+import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewModel
 import com.mcgars.solarsystem.util.component
 
 

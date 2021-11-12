@@ -1,101 +1,172 @@
 package com.mcgars.solarsystem.di.store
 
+import androidx.compose.ui.unit.ExperimentalUnitApi
 import kotlin.reflect.KClass
 
+typealias Params = Any?
 
 class ComponentHolder<Component : Any>(
-    internal val parentComponent: Any?,
-    internal val params: Any?,
-    private val component: Component,
-    private val componentKey: KClass<Component>,
+    internal val params: Params,
+    internal val parentComponentHolder: ComponentHolder<Any>?,
+    internal val component: Component,
+    internal val componentClass: KClass<Component>,
 ) {
 
     fun get(): Component = component
 
     fun clear() {
-        ComponentStore.clear(componentKey, params)
+        ComponentStore.clear(componentClass, params)
     }
 }
 
-class ComponentProvider<ParentComponent : Any?, Component : Any, Params : Any?>(
-    val parentComponent: KClass<*>?,
-    val provideComponent: (ParentComponent?, Params?) -> Component,
+class ComponentProvider<ParentComponent : Any?, Component : Any, Params>(
+    val parentComponent: ((Params) -> ComponentHolder<Any>)?,
+    val provideComponent: (ParentComponent?, Params) -> Component,
 )
+
 
 object ComponentStore {
     private val cache = mutableMapOf<Int, MutableMap<Int, ComponentHolder<*>>>()
-    val providers = mutableMapOf<Int, ComponentProvider<Any?, Any, Any?>>()
+    val providers = mutableMapOf<Int, ComponentProvider<Any?, Any, Params>>()
+    val aliases = mutableMapOf<Int, KClass<*>>()
 
     /**
+     * Component register in general container
      *
+     * @param [alias] may register the component as alias interface, example: interface MySupperApi
+     *                if alias is null then will be auto registered all interfaces of component as aliases
+     *                To turn off auto registered aliases, just set empty list
+     * @param [provider] lazy init component
      */
     inline fun <reified Component : Any> register(
+        alias: List<KClass<*>>? = null,
         noinline provider: () -> Component
     ) {
-        val key = Component::class.hashCode()
-        val wrapProvider = { _: Any?, _: Any? -> provider.invoke() }
-        providers[key] = ComponentProvider(parentComponent = null, wrapProvider)
+        val wrapProvider = { _: Any?, _: Params -> provider.invoke() }
+        registerComponent(alias, providerParentComponent = null, wrapProvider)
     }
 
     /**
+     * Component register in general container
      *
+     * When [getComponent] are invoked with params then they transmitted as parameter in [provider]
+     *
+     * @param [alias] may register the component as alias interface, example: interface MySupperApi
+     *                if alias is null then will be auto registered all interfaces of component as aliases
+     *                To turn off auto registered aliases, just set empty list
+     * @param [provider] lazy init component
      */
     inline fun <reified Component : Any, Params : Any> registerWithParam(
+        alias: List<KClass<*>>? = null,
         noinline provider: (params: Params) -> Component
     ) {
-        val key = Component::class.hashCode()
         val wrapProvider = { _: Any?, params: Any? -> provider.invoke(params as Params) }
-        providers[key] = ComponentProvider(parentComponent = null, wrapProvider)
+        registerComponent(alias, providerParentComponent = null, wrapProvider)
     }
 
     /**
+     * Component register in general container
      *
+     * When [Component] dependencies of [ParentComponent] then [ParentComponent] transmitted as parameter in [provider]
+     *
+     * @param [alias] may register the component as alias interface, example: interface MySupperApi
+     *                if alias is null then will be auto registered all interfaces of component as aliases
+     *                To turn off auto registered aliases, just set empty list
+     * @param [provider] lazy init component
      */
     inline fun <reified ParentComponent : Any, reified Component : Any> register(
+        alias: List<KClass<*>>? = null,
+        noinline parentComponent: () -> ComponentHolder<ParentComponent>,
         noinline provider: (component: ParentComponent) -> Component
     ) {
-        val key = Component::class.hashCode()
         val wrapProvider =
-            { parentComponent: Any?, _: Any? -> provider.invoke(requireNotNull(parentComponent) as ParentComponent) }
-        providers[key] = ComponentProvider(ParentComponent::class, wrapProvider)
+            { parent: Any?, _: Params -> provider.invoke(requireNotNull(parent) as ParentComponent) }
+        val wrapParentComponentProvider = { _: Params -> parentComponent.invoke() }
+        registerComponent(alias, wrapParentComponentProvider as ((Any?) -> ComponentHolder<Any>), wrapProvider)
     }
 
     /**
+     * Component register in general container
      *
+     * When [getComponent] are invoked with params and
+     * when [Component] dependencies of [ParentComponent] then params and [ParentComponent]
+     * transmitted as parameters in [provider]
+     *
+     * @param [alias] may register the component as alias interface, example: interface MySupperApi
+     *                if alias is null then will be auto registered all interfaces of component as aliases
+     *                To turn off auto registered aliases, just set empty list
+     * @param [provider] lazy init component
      */
-    inline fun <reified ParentComponent, reified Component : Any, Params : Any?> register(
+    inline fun <reified ParentComponent : Any, reified Component : Any, Params : Any?> register(
+        alias: List<KClass<*>>? = null,
+        noinline parentComponent: (Params) -> ComponentHolder<ParentComponent>,
         noinline provider: (component: ParentComponent, params: Params) -> Component
     ) {
+        registerComponent(
+            alias,
+            parentComponent as ((Any?) -> ComponentHolder<Any>),
+            provider as (Any?, Any?) -> Any
+        )
+    }
+
+    /*private, not use*/
+    inline fun <reified Component : Any> registerComponent(
+        alias: List<KClass<*>>? = null,
+        noinline providerParentComponent: ((Params) -> ComponentHolder<Any>)? = null,
+        noinline provider: (Any?, Params) -> Component,
+    ) {
         val key = Component::class.hashCode()
-        providers[key] = ComponentProvider(ParentComponent::class, provider as (Any?, Any?) -> Any)
+        val ali = alias?.toTypedArray() ?: Component::class.java.interfaces
+        ali.forEach {
+            val aliasKey = it.hashCode()
+            if (aliases.containsKey(aliasKey)) throw RuntimeException("alias $it already registered")
+            aliases[aliasKey] = Component::class
+        }
+
+        providers[key] = ComponentProvider(providerParentComponent, provider)
     }
 
     /**
+     * If [Component] not register in store, then will be thrown [NullPointerException]
      *
+     * @param params any object, that transmitted in provider
+     * @return [Component] registered by [register] method
      */
+    @Throws(NullPointerException::class)
     inline fun <reified Component : Any> getComponent(params: Any? = null): ComponentHolder<Component> {
         return getComponent(Component::class, params)
     }
 
     /**
+     * If [Component] not register in store, then will be thrown [NullPointerException]
      *
+     * @param params any object, that transmitted in provider
+     * @return [Component] registered by [register] method
      */
     fun <Component : Any> getComponent(
         component: KClass<Component>,
-        params: Any? = null
+        params: Params = null
     ): ComponentHolder<Component> {
-        val key = component.hashCode()
-        val componentBucket = cache[key] ?: createCacheBucked(component, params)
+        val keyOrAliasKey = component.hashCode()
+        val aliasComponent = aliases[keyOrAliasKey] ?: component
+        val key = aliasComponent.hashCode()
+
+        val componentBucket = cache[key] ?: createCacheBucked(aliasComponent, params)
         val componentHolder = componentBucket[params.hashCode()] ?: createComponentHolder(
-            componentKey = component,
+            componentKey = aliasComponent,
             params = params,
-            componentProvider = component.provider()
+            componentProvider = aliasComponent.provider()
         )
         return componentHolder as ComponentHolder<Component>
     }
 
     /**
+     * Remove components from the store
      *
+     * First clearing bucked with condition [params] and [component], if [params] not setted then
+     * clearing bucked with condition [component]
+     *
+     * If [component] has children components, they also will be cleared
      */
     fun clear(
         component: KClass<*>,
@@ -103,21 +174,28 @@ object ComponentStore {
     ) {
         val componentKey = component.hashCode()
         val paramKey = params.hashCode()
-        val cacheComponent = cache[component.hashCode()]
-        cacheComponent?.remove(paramKey)
-        if (cacheComponent?.isEmpty() == true) {
+        val cacheComponentHolder = cache[componentKey]
+        val removedComponentHolder = cacheComponentHolder?.remove(paramKey)
+        if (cacheComponentHolder?.isEmpty() == true) {
             cache.remove(componentKey)
         }
 
+        if (removedComponentHolder == null) return
+
         // all component's children also need remove
-        val candidatesToRemove = cache.mapNotNull { (componentKey, componentBucket) ->
-            val holders = componentBucket.mapNotNull { (cacheParamKey, componentHolder) ->
-                if (componentHolder.parentComponent == component) cacheParamKey else null
+        val candidatesToRemove = mutableListOf<Pair<KClass<Any>, Params>>()
+        cache.forEach { (_, componentBucket) ->
+            componentBucket.forEach { (_, componentHolder) ->
+
+                val parentComponent = componentHolder.parentComponentHolder
+                if (parentComponent?.component == removedComponentHolder.component) {
+                    candidatesToRemove += componentHolder.componentClass as KClass<Any> to componentHolder.params
+                }
             }
-            holders.forEach(componentBucket::remove)
-            if (componentBucket.isEmpty()) componentKey else null
         }
-        candidatesToRemove.forEach(cache::remove)
+        candidatesToRemove.forEach { (parentClass, parentParams) ->
+            clear(parentClass, parentParams)
+        }
     }
 
     /*
@@ -140,17 +218,15 @@ object ComponentStore {
     * */
     private fun <Component : Any> createComponentHolder(
         componentKey: KClass<Component>,
-        params: Any?,
-        componentProvider: ComponentProvider<Any?, Any, Any?>
+        params: Params,
+        componentProvider: ComponentProvider<Any?, Any, Params>
     ): ComponentHolder<*> {
-        val parentComponent = componentProvider.parentComponent?.let {
-            getComponent(component = it, params)
-        }
+        val parentComponent = componentProvider.parentComponent?.invoke(params)
         return ComponentHolder(
-            parentComponent = parentComponent,
             params = params,
+            parentComponentHolder = parentComponent,
             component = componentProvider.provideComponent(parentComponent, params),
-            componentKey = componentKey as KClass<Any>,
+            componentClass = componentKey as KClass<Any>,
         )
     }
 

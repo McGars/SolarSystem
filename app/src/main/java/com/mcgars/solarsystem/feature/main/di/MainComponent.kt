@@ -1,6 +1,5 @@
 package com.mcgars.solarsystem.feature.main.di
 
-import androidx.lifecycle.ViewModelProvider
 import com.mcgars.solarsystem.di.AppComponentApi
 import com.mcgars.solarsystem.di.data.SolarSystemComponentApi
 import com.mcgars.solarsystem.di.viewmodel.ViewModelApi
