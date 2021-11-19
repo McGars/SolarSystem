@@ -18,18 +18,17 @@ import com.mcgars.solarsystem.util.component
 class DetailFragment : Fragment() {
 
     companion object {
-        private const val ARG_PLANET = "arg.planet"
+        private const val ARG_PLANET_POSITION = "arg.planetPosition"
 
-        fun newInstance(planet: Planet): Fragment = DetailFragment().apply {
+        fun newInstance(planetPosition: Int): Fragment = DetailFragment().apply {
             arguments = Bundle().apply {
-                putParcelable(ARG_PLANET, planet)
+                putInt(ARG_PLANET_POSITION, planetPosition)
             }
         }
     }
 
     private val detailComponent: DetailComponent by component {
-        requireArguments().getParcelable<Planet>(ARG_PLANET)
-            ?: NullPointerException("arg $ARG_PLANET is not set")
+        requireArguments().getInt(ARG_PLANET_POSITION)
     }
 
     private val detailViewModel: DetailViewModel by viewModels { detailComponent.viewModelFactory() }

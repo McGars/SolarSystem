@@ -13,9 +13,9 @@ import com.mcgars.solarsystem.feature.main.di.createMainComponent
 object Scope {
 
     fun registerComponents(context: Context): Unit = with(ComponentStore) {
-        this.register { createAppComponent(context) }
-        this.register { createSolarSystemComponent() }
-        this.register(alias = emptyList()) {
+        register { createAppComponent(context) }
+        register { createSolarSystemComponent() }
+        register(alias = emptyList()) {
             createMainComponent(
                 appComponentApi = getComponent<AppComponent>().get(),
                 solarSystemComponentApi = getComponent<SolarSystemComponentApi>().get()

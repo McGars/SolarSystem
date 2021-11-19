@@ -1,6 +1,5 @@
 package com.mcgars.solarsystem.di.store
 
-import androidx.compose.ui.unit.ExperimentalUnitApi
 import kotlin.reflect.KClass
 
 typealias Params = Any?
