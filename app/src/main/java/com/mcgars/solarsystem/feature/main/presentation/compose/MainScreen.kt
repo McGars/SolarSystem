@@ -24,7 +24,7 @@ import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.calculateCurrentOffsetForPage
 import com.mcgars.solarsystem.compose.AppScaffold
 import com.mcgars.solarsystem.di.store.ComponentHolder
-import com.mcgars.solarsystem.di.store.ComponentStore
+import com.mcgars.solarsystem.di.store.ComponentStorage
 import com.mcgars.solarsystem.feature.main.di.MainComponent
 import com.mcgars.solarsystem.feature.main.presentation.model.MainViewModel
 import com.mcgars.solarsystem.feature.main.presentation.model.MainViewState
@@ -34,7 +34,7 @@ import kotlin.math.absoluteValue
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    componentHolder: ComponentHolder<MainComponent> = ComponentStore.getComponent(),
+    componentHolder: ComponentHolder<MainComponent> = ComponentStorage.getComponent(),
     mainComponent: MainComponent = componentHolder.get(),
     mainViewModel: MainViewModel = viewModel(factory = mainComponent.viewModelFactory())
 ) {

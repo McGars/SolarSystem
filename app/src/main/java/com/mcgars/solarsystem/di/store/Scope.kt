@@ -12,7 +12,7 @@ import com.mcgars.solarsystem.feature.main.di.createMainComponent
 
 object Scope {
 
-    fun registerComponents(context: Context): Unit = with(ComponentStore) {
+    fun registerComponents(context: Context): Unit = with(ComponentStorage) {
         register { createAppComponent(context) }
         register { createSolarSystemComponent() }
         register(alias = emptyList()) {

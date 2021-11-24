@@ -6,7 +6,6 @@ typealias Params = Any?
 
 class ComponentHolder<Component : Any>(
     internal val params: Params,
-    internal val parentComponentHolder: ComponentHolder<Any>?,
     internal val component: Component,
     internal val componentClass: KClass<Component>,
 ) {
@@ -14,7 +13,7 @@ class ComponentHolder<Component : Any>(
     fun get(): Component = component
 
     fun clear() {
-        ComponentStore.clear(componentClass, params)
+        ComponentStorage.clear(componentClass, params)
     }
 }
 
@@ -24,10 +23,11 @@ class ComponentProvider<ParentComponent : Any?, Component : Any, Params>(
 )
 
 
-object ComponentStore {
+object ComponentStorage {
+    private val providers = mutableMapOf<Int, ComponentProvider<Any?, Any, Params>>()
+    private val aliases = mutableMapOf<Int, KClass<*>>()
     private val cache = mutableMapOf<Int, MutableMap<Int, ComponentHolder<*>>>()
-    val providers = mutableMapOf<Int, ComponentProvider<Any?, Any, Params>>()
-    val aliases = mutableMapOf<Int, KClass<*>>()
+    private val indexes = mutableMapOf<Any, List<ComponentHolder<*>>>()
 
     /**
      * Component register in general container
@@ -42,7 +42,7 @@ object ComponentStore {
         noinline provider: () -> Component
     ) {
         val wrapProvider = { _: Any?, _: Params -> provider.invoke() }
-        registerComponent(alias, providerParentComponent = null, wrapProvider)
+        registerComponent(Component::class, alias, providerParentComponent = null, wrapProvider)
     }
 
     /**
@@ -60,7 +60,7 @@ object ComponentStore {
         noinline provider: (params: Params) -> Component
     ) {
         val wrapProvider = { _: Any?, params: Any? -> provider.invoke(params as Params) }
-        registerComponent(alias, providerParentComponent = null, wrapProvider)
+        registerComponent(Component::class, alias, providerParentComponent = null, wrapProvider)
     }
 
     /**
@@ -81,7 +81,12 @@ object ComponentStore {
         val wrapProvider =
             { parent: Any?, _: Params -> provider.invoke(requireNotNull(parent) as ParentComponent) }
         val wrapParentComponentProvider = { _: Params -> parentComponent.invoke() }
-        registerComponent(alias, wrapParentComponentProvider as ((Any?) -> ComponentHolder<Any>), wrapProvider)
+        registerComponent(
+            Component::class,
+            alias,
+            wrapParentComponentProvider as ((Any?) -> ComponentHolder<Any>),
+            wrapProvider
+        )
     }
 
     /**
@@ -102,24 +107,26 @@ object ComponentStore {
         noinline provider: (component: ParentComponent, params: Params) -> Component
     ) {
         registerComponent(
+            Component::class,
             alias,
             parentComponent as ((Any?) -> ComponentHolder<Any>),
-            provider as (Any?, Any?) -> Any
+            provider as (Any?, Any?) -> Component
         )
     }
 
     /*private, not use*/
-    inline fun <reified Component : Any> registerComponent(
+    fun <Component : Any> registerComponent(
+        componentClass: KClass<Component>,
         alias: List<KClass<*>>? = null,
-        noinline providerParentComponent: ((Params) -> ComponentHolder<Any>)? = null,
-        noinline provider: (Any?, Params) -> Component,
+        providerParentComponent: ((Params) -> ComponentHolder<Any>)? = null,
+        provider: (Any?, Params) -> Component,
     ) {
-        val key = Component::class.hashCode()
-        val ali = alias?.toTypedArray() ?: Component::class.java.interfaces
+        val key = componentClass.hashCode()
+        val ali = alias?.toTypedArray() ?: componentClass.java.interfaces
         ali.forEach {
             val aliasKey = it.hashCode()
             if (aliases.containsKey(aliasKey)) throw RuntimeException("alias $it already registered")
-            aliases[aliasKey] = Component::class
+            aliases[aliasKey] = componentClass
         }
 
         providers[key] = ComponentProvider(providerParentComponent, provider)
@@ -181,20 +188,8 @@ object ComponentStore {
 
         if (removedComponentHolder == null) return
 
-        // all component's children also need remove
-        val candidatesToRemove = mutableListOf<Pair<KClass<Any>, Params>>()
-        cache.forEach { (_, componentBucket) ->
-            componentBucket.forEach { (_, componentHolder) ->
-
-                val parentComponent = componentHolder.parentComponentHolder
-                if (parentComponent?.component == removedComponentHolder.component) {
-                    candidatesToRemove += componentHolder.componentClass as KClass<Any> to componentHolder.params
-                }
-            }
-        }
-        candidatesToRemove.forEach { (parentClass, parentParams) ->
-            clear(parentClass, parentParams)
-        }
+        // all children components also cleared
+        indexes[removedComponentHolder]?.forEach(ComponentHolder<*>::clear)
     }
 
     /*
@@ -220,13 +215,20 @@ object ComponentStore {
         params: Params,
         componentProvider: ComponentProvider<Any?, Any, Params>
     ): ComponentHolder<*> {
-        val parentComponent = componentProvider.parentComponent?.invoke(params)
-        return ComponentHolder(
+        val parentComponentHolder = componentProvider.parentComponent?.invoke(params)
+        val componentHolder = ComponentHolder(
             params = params,
-            parentComponentHolder = parentComponent,
-            component = componentProvider.provideComponent(parentComponent, params),
+            component = componentProvider.provideComponent(parentComponentHolder, params),
             componentClass = componentKey as KClass<Any>,
         )
+
+        // Index link create between the parent and with his children
+        if (parentComponentHolder != null) {
+            val index = indexes[parentComponentHolder] ?: listOf()
+            indexes[parentComponentHolder] = index + componentHolder
+        }
+
+        return componentHolder
     }
 
     private fun <Component : Any> KClass<Component>.provider(): ComponentProvider<Any?, Any, Any?> =

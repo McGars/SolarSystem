@@ -9,13 +9,13 @@ import com.github.terrakok.cicerone.androidx.AppNavigator
 import com.mcgars.solarsystem.compose.AppScaffoldFragment
 import com.mcgars.solarsystem.databinding.ContentMainBinding
 import com.mcgars.solarsystem.di.AppComponent
-import com.mcgars.solarsystem.di.store.ComponentStore
+import com.mcgars.solarsystem.di.store.ComponentStorage
 import com.mcgars.solarsystem.feature.navigation.Screens
 
 class MainActivity : AppCompatActivity() {
 
     private val appComponent: AppComponent by lazy {
-        ComponentStore.getComponent<AppComponent>().get()
+        ComponentStorage.getComponent<AppComponent>().get()
     }
 
     private val navigatorHolder: NavigatorHolder by lazy {
