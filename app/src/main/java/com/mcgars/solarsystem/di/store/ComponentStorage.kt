@@ -180,16 +180,17 @@ object ComponentStorage {
     ) {
         val componentKey = component.hashCode()
         val paramKey = params.hashCode()
-        val cacheComponentHolder = cache[componentKey]
-        val removedComponentHolder = cacheComponentHolder?.remove(paramKey)
-        if (cacheComponentHolder?.isEmpty() == true) {
+        val cacheBucked = cache[componentKey]
+        val componentHolder = cacheBucked?.remove(paramKey)
+        if (cacheBucked?.isEmpty() == true) {
             cache.remove(componentKey)
         }
 
-        if (removedComponentHolder == null) return
+        if (componentHolder == null) return
 
         // all children components also cleared
-        indexes[removedComponentHolder]?.forEach(ComponentHolder<*>::clear)
+        val children = indexes.remove(componentHolder)
+        children?.forEach(ComponentHolder<*>::clear)
     }
 
     /*
