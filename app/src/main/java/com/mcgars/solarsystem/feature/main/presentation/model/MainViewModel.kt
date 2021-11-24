@@ -34,8 +34,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun onPlanetClick(planet: Planet) {
-        router.navigateTo(Screens.detail(planet))
+    fun onPlanetClick(planetPosition: Int) {
+        router.navigateTo(Screens.detail(planetPosition))
     }
 
 }

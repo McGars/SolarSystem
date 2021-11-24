@@ -11,7 +11,7 @@ import com.mcgars.solarsystem.feature.main.presentation.MainFragment
  */
 object Screens {
     fun main() = FragmentScreen { MainFragment.newInstance() }
-    fun detail(planet: Planet) = FragmentScreen { DetailFragment.newInstance(planet) }
+    fun detail(planetPosition: Int) = FragmentScreen { DetailFragment.newInstance(planetPosition) }
 }
 
 /**
