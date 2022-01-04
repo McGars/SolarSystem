@@ -91,12 +91,12 @@ dependencies {
 
     debugImplementation Libs.AndroidX.Compose.uiTestManifest
 
-    androidTestImplementation Libs.junit
-    androidTestImplementation Libs.AndroidX.Test.core
-    androidTestImplementation Libs.AndroidX.Test.espressoCore
-    androidTestImplementation Libs.AndroidX.Test.rules
-    androidTestImplementation Libs.AndroidX.Test.Ext.junit
-    androidTestImplementation Libs.AndroidX.Compose.uiTest
+    testImplementation Libs.junit
+    testImplementation Libs.AndroidX.Test.core
+    testImplementation Libs.AndroidX.Test.espressoCore
+    testImplementation Libs.AndroidX.Test.rules
+    testImplementation Libs.AndroidX.Test.Ext.junit
+    testImplementation Libs.AndroidX.Compose.uiTest
 
     // androidx.test is forcing JUnit, 4.12. This forces it to use 4.13
     configurations.configureEach {

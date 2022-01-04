@@ -17,14 +17,14 @@ object Scope {
         register { createSolarSystemComponent() }
         register(alias = emptyList()) {
             createMainComponent(
-                appComponentApi = getComponent<AppComponent>().get(),
-                solarSystemComponentApi = getComponent<SolarSystemComponentApi>().get()
+                appComponentApi = getComponent<AppComponent>(),
+                solarSystemComponentApi = getComponent()
             )
         }
         registerWithParam<DetailComponent, Int>(alias = emptyList())  { planetPosition ->
             createDetailComponent(
                 planetPosition = planetPosition,
-                solarSystemComponentApi = getComponent<SolarSystemComponentApi>().get()
+                solarSystemComponentApi = getComponent()
             )
         }
     }

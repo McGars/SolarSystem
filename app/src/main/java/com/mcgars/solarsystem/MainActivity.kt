@@ -15,7 +15,7 @@ import com.mcgars.solarsystem.feature.navigation.Screens
 class MainActivity : AppCompatActivity() {
 
     private val appComponent: AppComponent by lazy {
-        ComponentStorage.getComponent<AppComponent>().get()
+        ComponentStorage.getComponent()
     }
 
     private val navigatorHolder: NavigatorHolder by lazy {
