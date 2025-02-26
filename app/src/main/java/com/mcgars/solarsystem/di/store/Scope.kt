@@ -3,7 +3,6 @@ package com.mcgars.solarsystem.di.store
 import android.content.Context
 import com.mcgars.solarsystem.di.AppComponent
 import com.mcgars.solarsystem.di.createAppComponent
-import com.mcgars.solarsystem.di.data.SolarSystemComponentApi
 import com.mcgars.solarsystem.di.data.createSolarSystemComponent
 import com.mcgars.solarsystem.feature.detail.di.DetailComponent
 import com.mcgars.solarsystem.feature.detail.di.createDetailComponent

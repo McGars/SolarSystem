@@ -1,5 +1,6 @@
 
 import com.mcgars.compose.solarsystem.buildsrc.Libs
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id 'com.android.application'
@@ -9,8 +10,7 @@ plugins {
 }
 
 android {
-    compileSdkVersion Libs.Compile.compileSdk
-    buildToolsVersion Libs.Compile.buildTools
+    compileSdk Libs.Compile.compileSdk
 
     defaultConfig {
         applicationId "com.mcgars.solarsystem"
@@ -34,7 +34,7 @@ android {
         viewBinding true
 
         // Disable unused AGP features
-        buildConfig false
+        buildConfig true
         aidl false
         renderScript false
         resValues false
@@ -50,7 +50,7 @@ android {
         targetCompatibility Libs.javaVersion
     }
 
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    tasks.withType(KotlinCompile).configureEach {
         kotlinOptions {
             freeCompilerArgs += "-Xopt-in=com.google.accompanist.pager.ExperimentalPagerApi"
         }
@@ -74,6 +74,7 @@ dependencies {
     implementation Libs.AndroidX.Navigation.navigationCompose
     implementation Libs.material
 
+//    implementation Libs.AndroidX.Compose.composeBom
     implementation Libs.AndroidX.Compose.layout
     implementation Libs.AndroidX.Compose.material
     implementation Libs.AndroidX.Compose.materialIconsExtended

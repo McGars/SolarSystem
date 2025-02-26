@@ -19,28 +19,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mcgars.solarsystem.compose.AppScaffold
 import com.mcgars.solarsystem.data.model.Planet
-import com.mcgars.solarsystem.di.store.ComponentHolder
-import com.mcgars.solarsystem.di.store.ComponentStorage
 import com.mcgars.solarsystem.feature.detail.di.DetailComponent
 import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewModel
 import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewState
 import com.mcgars.solarsystem.feature.main.presentation.compose.PlanetIcon
 import com.mcgars.solarsystem.feature.main.presentation.compose.StarsBackground
-
+import com.mcgars.solarsystem.util.getViewModel
 
 @Composable
 fun DetailScreen(
     planetPosition: Int,
-    componentHolder: ComponentHolder<DetailComponent> = ComponentStorage.getComponent(planetPosition),
-    detailComponent: DetailComponent = componentHolder.get(),
-    detailViewModel: DetailViewModel = viewModel(factory = detailComponent.viewModelFactory())
+    detailViewModel: DetailViewModel = getViewModel<DetailComponent, DetailViewModel>(planetPosition)
 ) {
-    AppScaffold(componentHolder) {
-        DetailContent(detailViewModel)
-    }
+    DetailContent(detailViewModel)
 }
 
 @Composable

@@ -1,13 +1,13 @@
 package com.mcgars.solarsystem
 
 import com.mcgars.solarsystem.di.store.ComponentStorage
+import com.mcgars.solarsystem.di.store.get
 import junit.framework.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 
-
-class ComponentStorageTest {
+internal class ComponentStorageTest {
 
     interface First
     interface Second
@@ -16,6 +16,8 @@ class ComponentStorageTest {
     class A
     class B : First
     class C : Second, Third
+
+    class D(val param: String)
 
     @Before
     fun before() {
@@ -30,8 +32,8 @@ class ComponentStorageTest {
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<A>()
-        val component2 = getComponent<A>()
+        val component = get<A>()
+        val component2 = get<A>()
         val componentInCache = cache[A::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -77,7 +79,7 @@ class ComponentStorageTest {
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<First>()
+        val component = get<First>()
         val componentInCache = cache[B::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -97,8 +99,8 @@ class ComponentStorageTest {
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<Second>()
-        val component2 = getComponent<Third>()
+        val component = get<Second>()
+        val component2 = get<Third>()
         val componentInCache = cache[C::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -109,6 +111,29 @@ class ComponentStorageTest {
         assert(component2 is C)
         assertEquals(cache.size, 1)
         assertEquals(aliases.size, 2)
+        assert(indexes.isEmpty())
+    }
+
+    @Test
+    fun registerComponentWithAutoAliasAndExcludeOneAlias() = with(ComponentStorage) {
+        // action
+        excludeAliases(Second::class)
+        register { C() }
+
+        // verify
+        assert(cache.isEmpty())
+
+        // action
+        val component = get<Third>()
+        val componentInCache = cache[C::class.hashCode()]?.get(0)?.get()
+
+        // verify
+        assertEquals(component, componentInCache)
+        assert(component is C)
+        assertEquals(cache.size, 1)
+        assertEquals(aliases.size, 1)
+        assert(aliases[Third::class.hashCode()] != null)
+        assert(aliases[Second::class.hashCode()] == null)
         assert(indexes.isEmpty())
     }
 
@@ -124,12 +149,12 @@ class ComponentStorageTest {
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<Third>()
+        val component = get<Third>()
         val componentInCache = cache[C::class.hashCode()]?.get(0)?.get()
 
         // verify
         assertThrows(NullPointerException::class.java) {
-            getComponent<Second>()
+            get<Second>()
         }
         assertEquals(component, componentInCache)
         assertEquals(cache.size, 1)
@@ -149,7 +174,7 @@ class ComponentStorageTest {
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<C>()
+        val component = get<C>()
         val componentInCache = cache[C::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -170,7 +195,7 @@ class ComponentStorageTest {
         // verify
         assert(cache.isEmpty())
         assertThrows(NullPointerException::class.java) {
-            getComponent<First>()
+            get<First>()
         }
         Unit
     }
@@ -179,15 +204,12 @@ class ComponentStorageTest {
     fun registerComponentWithParent() = with(ComponentStorage) {
         // action
         register { A() }
-        register<A, B>(
-            parentComponent = { getComponent() },
-            provider = { B() }
-        )
+        registerWithParent<A, B> { B() }
         // verify
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<B>()
+        val component = get<B>()
         val componentInCache = cache[B::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -206,21 +228,15 @@ class ComponentStorageTest {
     fun registerComponentsWithParent() = with(ComponentStorage) {
         // action
         register { A() }
-        register<A, B>(
-            parentComponent = { getComponent() },
-            provider = { B() }
-        )
-        register<A, C>(
-            parentComponent = { getComponent() },
-            provider = { C() }
-        )
+        registerWithParent<A, B> { B() }
+        registerWithParent<A, C> { C() }
 
         // verify
         assert(cache.isEmpty())
 
         // action
-        val component = getComponent<B>()
-        val component2 = getComponent<C>()
+        val component = get<B>()
+        val component2 = get<C>()
         val componentInCache = cache[B::class.hashCode()]?.get(0)?.get()
         val component2InCache = cache[C::class.hashCode()]?.get(0)?.get()
 
@@ -245,7 +261,7 @@ class ComponentStorageTest {
         register { A() }
 
         // action
-        val component = getComponent<A>()
+        val component = get<A>()
         val componentInCache = cache[A::class.hashCode()]?.get(0)?.get()
 
         // verify
@@ -281,7 +297,7 @@ class ComponentStorageTest {
         register { B() }
 
         // action
-        val component = getComponent<First>()
+        get<First>()
 
         // verify
         assertEquals(cache.size, 1)
@@ -299,18 +315,12 @@ class ComponentStorageTest {
     fun clearComponentsWithParent() = with(ComponentStorage) {
         // action
         register { A() }
-        register<A, B>(
-            parentComponent = { getComponent() },
-            provider = { B() }
-        )
-        register<A, C>(
-            parentComponent = { getComponent() },
-            provider = { C() }
-        )
+        registerWithParent<A, B> { B() }
+        registerWithParent<A, C> { C() }
 
         // action
-        val component = getComponent<B>()
-        val component2 = getComponent<C>()
+        get<B>()
+        get<C>()
 
         // verify
         assertEquals(cache.size, 3)
@@ -328,21 +338,42 @@ class ComponentStorageTest {
     }
 
     @Test
+    fun clearChildrenComponentsWithoutParent() = with(ComponentStorage) {
+        // action
+        register { A() }
+        registerWithParent<A, B> { B() }
+        registerWithParent<A, C> { C() }
+
+        // action
+        val parent = getComponentHolder<A>()
+        get<B>()
+        get<C>()
+
+        // verify
+        assertEquals(cache.size, 3)
+        assertEquals(aliases.size, 3)
+        assertEquals(indexes.size, 1)
+
+        // action
+        clear(A::class, onlyChildren = true)
+
+        // verify
+        assertEquals(cache.size, 1)
+        assert(cache[A::class.hashCode()]?.get(0) == parent)
+        assertEquals(aliases.size, 3)
+        assertEquals(indexes.size, 0)
+    }
+
+    @Test
     fun clearComponentsWithParent2() = with(ComponentStorage) {
         // action
         register { A() }
-        register<A, B>(
-            parentComponent = { getComponent() },
-            provider = { B() }
-        )
-        register<A, C>(
-            parentComponent = { getComponent() },
-            provider = { C() }
-        )
+        registerWithParent<A, B> { B() }
+        registerWithParent<A, C> { C() }
 
         // action
-        val component = getComponent<B>()
-        val component2 = getComponent<C>()
+        get<B>()
+        get<C>()
 
         // verify
         assertEquals(cache.size, 3)
@@ -375,7 +406,7 @@ class ComponentStorageTest {
         }
 
         // action
-        val component = getComponent<A>("1")
+        val component = get<A>("1")
         val componentInCache = cache[A::class.hashCode()]?.get("1".hashCode())?.get()
 
         // verify
@@ -393,6 +424,21 @@ class ComponentStorageTest {
 
         // verify
         assertEquals(cache.size, 0)
+    }
+
+    @Test
+    fun getComponentsWithParams() = with(ComponentStorage) {
+        // action
+        registerWithParam<D, String> { D(it) }
+
+        // action
+        val component = get<D>("1")
+        val component2 = get<D>("2")
+
+        // verify
+        assertEquals(component.param, "1")
+        assertEquals(component2.param, "2")
+        assertEquals(cache[D::class.hashCode()]?.size, 2)
     }
 
 }

@@ -9,8 +9,9 @@ import androidx.fragment.app.viewModels
 import com.mcgars.solarsystem.compose.AppScaffoldFragment
 import com.mcgars.solarsystem.compose.composeView
 import com.mcgars.solarsystem.data.model.Planet
-import com.mcgars.solarsystem.feature.detail.presentation.compose.DetailContent
 import com.mcgars.solarsystem.feature.detail.di.DetailComponent
+import com.mcgars.solarsystem.feature.detail.presentation.compose.DetailContent
+import com.mcgars.solarsystem.feature.detail.presentation.compose.DetailScreen
 import com.mcgars.solarsystem.feature.detail.presentation.model.DetailViewModel
 import com.mcgars.solarsystem.util.component
 

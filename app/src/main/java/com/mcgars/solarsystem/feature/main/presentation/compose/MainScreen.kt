@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,33 +19,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.calculateCurrentOffsetForPage
-import com.mcgars.solarsystem.compose.AppScaffold
-import com.mcgars.solarsystem.di.store.ComponentHolder
-import com.mcgars.solarsystem.di.store.ComponentStorage
 import com.mcgars.solarsystem.feature.main.di.MainComponent
 import com.mcgars.solarsystem.feature.main.presentation.model.MainViewModel
 import com.mcgars.solarsystem.feature.main.presentation.model.MainViewState
 import com.mcgars.solarsystem.feature.navigation.navigateToDetails
+import com.mcgars.solarsystem.util.getViewModel
 import kotlin.math.absoluteValue
 
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    componentHolder: ComponentHolder<MainComponent> = ComponentStorage.getComponent(),
-    mainComponent: MainComponent = componentHolder.get(),
-    mainViewModel: MainViewModel = viewModel(factory = mainComponent.viewModelFactory())
+    mainViewModel: MainViewModel = getViewModel<MainComponent, MainViewModel>()
 ) {
-    AppScaffold(componentHolder) {
-        Box {
-            StarsBackground(Modifier.fillMaxSize())
-            PageContent(navController, mainViewModel)
-        }
+    Box {
+        StarsBackground(Modifier.fillMaxSize())
+        PageContent(navController, mainViewModel)
     }
-    mainViewModel.loadPlanets()
+    LaunchedEffect(Unit) {
+        mainViewModel.loadPlanets()
+    }
 }
 
 @Composable
